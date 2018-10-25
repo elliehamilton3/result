@@ -5,18 +5,15 @@ jobs:
       - image: circleci/node:8.9.1
     steps:
       - checkout
-      - restore_cache:
-          keys:
-          - v1-dependencies-{{ checksum "package.json" }}
-          # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
+      - setup_remote_docker
+      
+      - run: 
+        command: | 
+          apk add --no-cache py-pip=9.0.0-r1
+          pip install awscli==1.14.37
 
-      - run: npm install
+          eval $(aws ecr get-login --region eu-west-2 --no-include-email)
 
-      - save_cache:
-          paths:
-            - node_modules
-          key: v1-dependencies-{{ checksum "package.json" }}
-        
-      # run tests!
-      - run: npm test
+          docker build -t result .
+          docker tag result:latest 122275815213.dkr.ecr.eu-west-2.amazonaws.com/result:latest
+          docker push 122275815213.dkr.ecr.eu-west-2.amazonaws.com/result:latest
